@@ -47,16 +47,24 @@ public class PoiSearch_adapter extends BaseAdapter {
         PoiItem item = poiItems.get(position);
         holder.title.setText(item.getTitle());
         holder.des.setText(item.getSnippet());
+        if(item.getDistance()<=1000){
+            holder.dis.setText("距离"+String.valueOf(item.getDistance())+"米");
+        }else
+        {
+            holder.dis.setText("距离>"+String.valueOf(item.getDistance()/1000)+"千米");
+        }
+
 
         return cv;
     }
 
     private class ViewHolder {
-        TextView title, des;
+        TextView title, des,dis;
 
         ViewHolder(View view) {
             title = (TextView) view.findViewById(R.id.poi_text);
             des = (TextView) view.findViewById(R.id.poi_des);
+            dis = view.findViewById(R.id.poi_distance);
         }
     }
 }

@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -156,30 +157,30 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
 //    }
 
 
-//    /**
-//     * 更新隐私合规状态,需要在初始化地图之前完成
-//     *
-//     * @param context:    上下文
-//     * @param isContains: 隐私权政策是否包含高德开平隐私权政策  true是包含
-//     * @param isShow:     隐私权政策是否弹窗展示告知用户 true是展示
-//     * @since 8.1.0
-//     */
-//    public static void updatePrivacyShow(Context context, boolean isContains, boolean isShow){
-//
-//    }
-//
-//    /**
-//     * 更新同意隐私状态,需要在初始化地图之前完成
-//     *
-//     * @param context: 上下文
-//     * @param isAgree: 隐私权政策是否取得用户同意  true是用户同意
-//     * @since 8.1.0
-//     */
-//    public static void updatePrivacyAgree(Context context, boolean isAgree) {
-//
-//    }
-//
-//
+    /**
+     * 更新隐私合规状态,需要在初始化地图之前完成
+     *
+     * @param context:    上下文
+     * @param isContains: 隐私权政策是否包含高德开平隐私权政策  true是包含
+     * @param isShow:     隐私权政策是否弹窗展示告知用户 true是展示
+     * @since 8.1.0
+     */
+    public static void updatePrivacyShow(Context context, boolean isContains, boolean isShow){
+
+    }
+
+    /**
+     * 更新同意隐私状态,需要在初始化地图之前完成
+     *
+     * @param context: 上下文
+     * @param isAgree: 隐私权政策是否取得用户同意  true是用户同意
+     * @since 8.1.0
+     */
+    public static void updatePrivacyAgree(Context context, boolean isAgree) {
+
+    }
+
+
 //    private MapView mMapView = null;
 //    private AMap aMap;
 //    @Override
@@ -255,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
     private PoiResult poiResult; // poi返回的结果
     //        private PoiOverlay poiOverlay;// poi图层
     private List<PoiItem> poiItems;// poi数据
+    private List<Marker> listMarkers;//地点图标
     private PoiSearch_adapter adapter; //普通的 ListView 的 adapter，需根据需要自行编写
 
 
@@ -307,94 +309,35 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
         doSearchQuery();
     }
 
+
     /**
      * 开始进行poi搜索
      */
     protected void doSearchQuery() {
 //            aMap.setOnMapClickListener(null);// 进行poi搜索时清除掉地图点击事件
-        query = new PoiSearch.Query("", "", city);// 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
+        query = new PoiSearch.Query("火锅", "", city);// 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
         query.setPageSize(20);// 设置每页最多返回多少条poiitem
         query.setPageNum(1);// 设置查第一页
-        getLatlon(city);
+//        getLatlon(city);
+        if (latlng != null) {
+            LatLonPoint lp = new LatLonPoint(latlng.latitude, latlng.longitude);
+            try {
+                poiSearch = new PoiSearch(this, query);
+            } catch (AMapException e) {
+                e.printStackTrace();
+            }
+//            MarkerOptions markerOption = new MarkerOptions().position(latlng)
+//                    .draggable(false)
+//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+//            //将数据添加到地图上
+//            Marker marker = aMap.addMarker(markerOption);
 
-            LatLonPoint lp = new LatLonPoint(latlng.latitude,latlng.longitude);
-//            lp.setLatitude(124.904976);
-//            lp.setLongitude(46.608305);
-            Log.d("latitude",lp.toString());
-        try {
-            poiSearch = new PoiSearch(this, query);
-        } catch (AMapException e) {
-            e.printStackTrace();
+            poiSearch.setOnPoiSearchListener(this);
+            poiSearch.setBound(new PoiSearch.SearchBound(lp, 10000));
+            poiSearch.searchPOIAsyn();// 异步搜索
         }
-        poiSearch.setOnPoiSearchListener(this);
-//            poiSearch.setBound(new PoiSearch.SearchBound(new LatLonPoint(locationMarker.getPosition().latitude,
-//                    locationMarker.getPosition().longitude), 1000));//设置周边搜索的中心点以及半径
-        // 设置搜索区域为以lp点为圆心，其周围2000米范围
-        poiSearch.setBound(new PoiSearch.SearchBound(lp, 1000, true));
-        poiSearch.searchPOIAsyn();// 异步搜索
     }
 
-
-    private void getLatlon(String city) {
-        GeocodeSearch geocodeSearch = null;
-        try {
-            geocodeSearch = new GeocodeSearch(this);
-        } catch (AMapException e) {
-            e.printStackTrace();
-        }
-        geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
-
-            private GeocodeResult geocodeResult;
-            private int i;
-
-            @Override
-            public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {
-
-            }
-
-            @Override
-            public void onGeocodeSearched(GeocodeResult geocodeResult, int i) {
-
-
-                if (i == 1000) {
-                    if (geocodeResult != null && geocodeResult.getGeocodeAddressList() != null &&
-
-                            geocodeResult.getGeocodeAddressList().size() > 0) {
-
-
-                        GeocodeAddress geocodeAddress = geocodeResult.getGeocodeAddressList().get(0);
-
-                        double latitude = geocodeAddress.getLatLonPoint().getLatitude();//纬度
-
-                        double longititude = geocodeAddress.getLatLonPoint().getLongitude();//经度
-
-                        String adcode = geocodeAddress.getAdcode();//区域编码
-
-
-                        Log.e("lgq地理编码", geocodeAddress.getAdcode() + "");
-
-                        Log.e("lgq纬度latitude", latitude + "");
-
-                        Log.e("lgq经度longititude", longititude + "");
-
-
-                        Log.i("lgq", "dddwww====" + longititude);
-
-
-                    } else {
-
-                        Toast.makeText(MainActivity.this, "地名出错", Toast.LENGTH_SHORT).show();
-
-//                        ToastUtils.show(context,"地址名出错");
-
-                    }
-
-                }
-
-            }
-
-        });
-    }
 
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
@@ -405,6 +348,7 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
                 //设置第一次焦点中心
                 latlng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
                 aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng, 14), 1000, null);
+
                 city = aMapLocation.getProvince();
                 doSearchQuery();
             } else {
@@ -432,31 +376,60 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
 
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
+        aMap.clear();
+//        MarkerOptions markerOption = new MarkerOptions().position(latlng)
+//                .draggable(false)
+//                .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+//        //将数据添加到地图上
+//        aMap.addMarker(markerOption);
     }
 
     @Override
     public void onCameraChangeFinish(CameraPosition cameraPosition) {
         latlng = cameraPosition.target;
         aMap.clear();
-        aMap.addMarker(new MarkerOptions().position(latlng));
+        MarkerOptions markerOption = new MarkerOptions().position(latlng)
+                .draggable(false)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+        //将数据添加到地图上
+        aMap.addMarker(markerOption);
         doSearchQuery();
     }
 
+    public void addMakerOption(List list) {
+        for (int i = 0; i < list.size(); i++) {
+            MarkerOptions markerOption = new MarkerOptions().position(latlng)
+                    .draggable(false)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+            //将数据添加到地图上
+//            aMap.addMarker(markerOption);
+            listMarkers.add(aMap.addMarker(markerOption));
+        }
+        listMarkers.get(0).setIcon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+    }
+
+
     @Override
     public void onPoiSearched(PoiResult result, int rCode) {
-        if (rCode == 0) {
+        if (rCode == 1000) {
             if (result != null && result.getQuery() != null) {// 搜索poi的结果
                 if (result.getQuery().equals(query)) {// 是否是同一条
                     poiResult = result;
                     poiItems = poiResult.getPois();// 取得第一页的poiitem数据，页数从数字0开始
-                    Log.d("conttte", poiItems.get(1).toString());
+                    Log.d("conttte", poiItems.toString());
                     List<SuggestionCity> suggestionCities = poiResult
                             .getSearchSuggestionCitys();
                     if (poiItems != null && poiItems.size() > 0) {
                         adapter = new PoiSearch_adapter(this, poiItems);
                         mapList.setAdapter(adapter);
                         mapList.setOnItemClickListener(new mOnItemClickListener());
-
+                        /*注释掉高德原有的PoiOverlay*/
+//                        PoiOverlay poiOverlay = new PoiOverlay(aMap, poiItems);
+//                        poiOverlay = new MyOverlay(aMap, poiItems);
+//                        poiOverlay.removeFromMap();
+//                        poiOverlay.addToMap();
+//                        poiOverlay.zoomToSpan();
+                        addMakerOption(poiItems);
                     }
                 } else {
                     Log.d("wjg", "无结果");
@@ -499,12 +472,22 @@ public class MainActivity extends AppCompatActivity implements LocationSource,
     private class mOnItemClickListener implements AdapterView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Intent intent = new Intent();
-            intent.putExtra(KEY_LAT, poiItems.get(position).getLatLonPoint().getLatitude());
-            intent.putExtra(KEY_LNG, poiItems.get(position).getLatLonPoint().getLongitude());
-            intent.putExtra(KEY_DES, poiItems.get(position).getTitle());
-            setResult(RESULT_OK, intent);
-            finish();
+
+            latlng = new LatLng(poiItems.get(position).getLatLonPoint().getLatitude(), poiItems.get(position).getLatLonPoint().getLongitude());
+            aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng, 17), 1000, null);
+            aMap.clear();
+//            MarkerOptions markerOption = new MarkerOptions().position(latlng)
+//                    .draggable(false)
+//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_local));
+//            //将数据添加到地图上
+//            aMap.addMarker(markerOption);
+//            Intent intent = new Intent();
+//            Log.d("itemclick", String.valueOf(poiItems.get(position).getLatLonPoint().getLatitude()));
+//            intent.putExtra(KEY_LAT, poiItems.get(position).getLatLonPoint().getLatitude());
+//            intent.putExtra(KEY_LNG, poiItems.get(position).getLatLonPoint().getLongitude());
+//            intent.putExtra(KEY_DES, poiItems.get(position).getTitle());
+//            setResult(RESULT_OK, intent);
+//            finish();
         }
     }
 }
